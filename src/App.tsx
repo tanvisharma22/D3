@@ -2,11 +2,14 @@ import React from 'react';
 import ScatterPlotChart from './ScatterPlotChart'; // Import the ScatterPlotChart component
 
 const App: React.FC = () => {
-  // Generate larger dataset
+  // Generate larger dataset based on sales and product
   const generateData = (count: number) => {
     const data = [];
+    const products = ['Product A', 'Product B']; // Example product list
     for (let i = 1; i <= count; i++) {
-      data.push({ hoursStudied: i, examScore: Math.floor(Math.random() * 100) });
+      const product = products[Math.floor(Math.random() * products.length)];
+      const sales = Math.floor(Math.random() * 100);
+      data.push({ sales, product, country: 'Unknown' }); // Add a default country value
     }
     return data;
   };
@@ -22,3 +25,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

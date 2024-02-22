@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 
 interface DataPoint {
-  hoursStudied: number;
-  examScore: number;
+  country: string;
+  sales: number;
+  product: string;
 }
 
 interface Props {
@@ -31,16 +32,18 @@ const ScatterPlotChart: React.FC<Props> = ({ data: initialData, width, height })
     const innerHeight = height - margin.top - margin.bottom;
 
     const xScale = d3
-      .scaleLinear()
-      .domain([0, d3.max(data, d => d.hoursStudied)! + 1])
+      .scaleBand()
+      .domain(data.map(d => d.country))
       .range([0, innerWidth])
-      .nice();
+      .padding(0.1);
 
     const yScale = d3
       .scaleLinear()
-      .domain([0, d3.max(data, d => d.examScore)! + 10])
+      .domain([0, d3.max(data, d => d.sales)! + 10])
       .range([innerHeight, 0])
       .nice();
+
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
     const xAxis = d3.axisBottom(xScale);
     const yAxis = d3.axisLeft(yScale);
@@ -62,7 +65,7 @@ const ScatterPlotChart: React.FC<Props> = ({ data: initialData, width, height })
       .attr('x', width / 2)
       .attr('y', height - margin.bottom / 4)
       .attr('text-anchor', 'middle')
-      .text('Hours Studied')
+      .text('Country')
       .style('font-weight', 'bold');
 
     svg
@@ -78,7 +81,7 @@ const ScatterPlotChart: React.FC<Props> = ({ data: initialData, width, height })
       .attr('x', -height / 2)
       .attr('y', margin.left / 2)
       .attr('text-anchor', 'middle')
-      .text('Exam Score')
+      .text('Sales')
       .style('font-weight', 'bold');
 
     svg.selectAll('circle').remove(); // Clear existing circles
@@ -88,10 +91,13 @@ const ScatterPlotChart: React.FC<Props> = ({ data: initialData, width, height })
     circles
       .enter()
       .append('circle')
-      .attr('cx', d => xScale(d.hoursStudied) + margin.left)
-      .attr('cy', d => yScale(d.examScore) + margin.top)
+      .attr('cx', d => {
+        const x = xScale(d.country);
+        return x !== undefined ? x + margin.left + (xScale.bandwidth() ?? 0) / 2 : 0;
+      })
+      .attr('cy', d => yScale(d.sales) + margin.top)
       .attr('r', 5)
-      .attr('fill', 'steelblue')
+      .attr('fill', d => colorScale(d.product))
       .on('mouseover', function (event, d) {
         const [x, y] = d3.pointer(event);
         setTooltipPosition({ x, y });
@@ -108,8 +114,9 @@ const ScatterPlotChart: React.FC<Props> = ({ data: initialData, width, height })
   const handleRefresh = () => {
     // Generate new random data
     const newData: DataPoint[] = Array.from({ length: 100 }, () => ({
-        hoursStudied: Math.floor(Math.random() * 100) + 1,
-        examScore: Math.floor(Math.random() * 100) + 1,
+      sales: Math.floor(Math.random() * 100) + 1,
+      country: Math.random() < 0.5 ? 'USA' : 'UK', // Example countries
+      product: Math.random() < 0.5 ? 'Product A' : 'Product B', // Example products
     }));
 
     // Update the state with new data
@@ -127,8 +134,9 @@ const ScatterPlotChart: React.FC<Props> = ({ data: initialData, width, height })
           {tooltipData && (
             <foreignObject x={tooltipPosition.x + 10} y={tooltipPosition.y - 50} width="180" height="90">
               <div style={{ backgroundColor: 'white', border: '1px solid black', padding: '10px', borderRadius: '5px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <div><strong>Hours Studied:</strong> {tooltipData.hoursStudied}</div>
-                <div><strong>Exam Score:</strong> {tooltipData.examScore}</div>
+                <div><strong>Country:</strong> {tooltipData.country}</div>
+                <div><strong>Sales:</strong> {tooltipData.sales}</div>
+                <div><strong>Product:</strong> {tooltipData.product}</div>
               </div>
             </foreignObject>
           )}
